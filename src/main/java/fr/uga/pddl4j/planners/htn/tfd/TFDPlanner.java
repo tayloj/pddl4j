@@ -16,6 +16,7 @@
 package fr.uga.pddl4j.planners.htn.tfd;
 
 import fr.uga.pddl4j.parser.ErrorManager;
+import fr.uga.pddl4j.plan.HDDLCertificate;
 import fr.uga.pddl4j.plan.Plan;
 import fr.uga.pddl4j.plan.SequentialPlan;
 import fr.uga.pddl4j.planners.AbstractPlanner;
@@ -62,7 +63,7 @@ public final class TFDPlanner extends AbstractPlanner {
      * @return a solution search or null if it does not exist.
      */
     @Override
-    public Plan search(final Problem problem) {
+    public HDDLCertificate search(final Problem problem) {
         // Create the list of pending nodes to explore
         final PriorityQueue<TFDNode> open = new PriorityQueue<>();
         // Create the root node of the search space
@@ -73,8 +74,8 @@ public final class TFDPlanner extends AbstractPlanner {
         // Add the root node to the list of the pending nodes to explore.
         open.add(root);
 
-        // Declare the plan used to store the result of the exploration
-        Plan plan = null;
+        // Declare the HDDLCertificate used to store the result of the exploration
+        HDDLCertificate proof = null;
 
         // Get the timeout for searching
         final int timeout = (int) arguments.get(Planner.TIMEOUT);
@@ -84,7 +85,7 @@ public final class TFDPlanner extends AbstractPlanner {
         boolean debug = false;
 
         // Start exploring the search space
-        while (!open.isEmpty() && plan == null && elapsedTime < timeout) {
+        while (!open.isEmpty() && proof == null && elapsedTime < timeout) {
             // Get and remove the first node of the pending list of nodes.
             final TFDNode currentNode = open.poll();
 
@@ -102,7 +103,7 @@ public final class TFDPlanner extends AbstractPlanner {
 
             // If the task network is empty we've got a solution
             if (currentNode.getTasks().isEmpty()) {
-                plan = this.extractPlan(currentNode, problem);
+                proof = this.extractPlan(currentNode, problem);
             } else {
                 // Get and remove the fist task of the task network
                 //System.out.println(currentNode);
@@ -185,7 +186,7 @@ public final class TFDPlanner extends AbstractPlanner {
             }
             elapsedTime = System.currentTimeMillis() - start;
         }
-        return plan;
+        return proof;
     }
 
     /**
@@ -195,17 +196,19 @@ public final class TFDPlanner extends AbstractPlanner {
      * @param problem the problem to be solved.
      * @return the solution plan or null is no solution was found.
      */
-    private SequentialPlan extractPlan(final TFDNode node, final Problem problem) {
+    private HDDLCertificate extractPlan(final TFDNode node, final Problem problem) {
         TFDNode n = node;
-        final SequentialPlan plan = new SequentialPlan();
+        final HDDLCertificate proof = new HDDLCertificate();
+
         while (n.getParent() != null) {
-            if (n.getOperator() < problem.getActions().size()) {
-                final Action a = problem.getActions().get(n.getOperator());
-                plan.add(0, a);
+            Integer id = n.getOperator();
+            if (id < problem.getActions().size()) {
+                final Action a = problem.getActions().get(id);
+                proof.add(0, a, id);
             }
             n = n.getParent();
         }
-        return plan;
+        return proof;
     }
 
     /**
@@ -284,16 +287,16 @@ public final class TFDPlanner extends AbstractPlanner {
             System.out.println("Searching a solution plan....\n");
             start = System.currentTimeMillis();
 
-            final Plan plan = planner.search(pb);
+            final HDDLCertificate proof = planner.search(pb);
             end = System.currentTimeMillis();
             final double searchTime = (end - start) / 1000.0;
-            if (plan != null) {
+            if (proof != null) {
                 // Print plan information
-                System.out.println("Found plan as follows:\n" + pb.toString(plan));
-                System.out.println(String.format("Plan total cost      : %4.2f", plan.cost()));
-                System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
-                System.out.println(String.format("Searching time       : %4.3fs", searchTime));
-                System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
+                System.out.println("==>\n" + pb.toString(proof) + "<==\n");
+                //System.out.println(String.format("Plan total cost      : %4.2f", proof.cost()));
+                //System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
+                //System.out.println(String.format("Searching time       : %4.3fs", searchTime));
+                //System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
 
             } else {
                 System.out.println(String.format(String.format("%nno plan found%n%n")));
