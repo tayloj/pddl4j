@@ -23,6 +23,7 @@ import fr.uga.pddl4j.encoding.AbstractGroundOperator;
 import fr.uga.pddl4j.encoding.Inertia;
 import fr.uga.pddl4j.parser.PDDLConnective;
 import fr.uga.pddl4j.parser.PDDLSymbol;
+import fr.uga.pddl4j.plan.HDDLCertificate;
 import fr.uga.pddl4j.plan.Plan;
 import fr.uga.pddl4j.util.BitMatrix;
 
@@ -780,6 +781,16 @@ public class Problem implements Serializable {
             plan.getActionSet(time).forEach(a ->
                 str.append(String.format("%0" + timeSpecifierSize + "d: (%" + actionSize + "s) [%d]%n",
                     time, this.toShortString(a), ((int) a.getDuration())))));
+        return str.toString();
+    }
+
+    public final String toString(final HDDLCertificate proof) {
+
+        final StringBuilder str = new StringBuilder();
+        for (int i = 0; i < proof.getOperatorIDs().size(); i++) {
+            str.append(String.format("%d %s%n", proof.getOperatorIDs().get(i),
+                this.toShortString(proof.actions().get(i))));
+        }
         return str.toString();
     }
 
