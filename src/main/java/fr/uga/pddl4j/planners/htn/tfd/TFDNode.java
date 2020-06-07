@@ -18,7 +18,6 @@ package fr.uga.pddl4j.planners.htn.tfd;
 import fr.uga.pddl4j.problem.State;
 
 import java.io.Serializable;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -41,6 +40,11 @@ public class TFDNode implements Serializable, Comparable<TFDNode> {
      * The list of tasks to be accomplished.
      */
     private LinkedList<Integer> tasks;
+
+    /**
+     * Task achieved at this node
+     */
+    private int taskdone;
 
     /**
      * The operator used to reach this node.
@@ -193,6 +197,14 @@ public class TFDNode implements Serializable, Comparable<TFDNode> {
      */
     public final void setOperator(int operator) {
         this.operator = operator;
+    }
+
+    public int getTaskdone() {
+        return taskdone;
+    }
+
+    public void setTaskdone(int taskdone) {
+        this.taskdone = taskdone;
     }
 
 

@@ -1,13 +1,23 @@
 package fr.uga.pddl4j.plan;
 
 import fr.uga.pddl4j.problem.Action;
+import fr.uga.pddl4j.problem.Method;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class HDDLCertificate extends SequentialPlan {
 
-    private List<Integer> operatorIDs = new ArrayList<>();
+    /**
+     * List of tasks solved by actions in the sequential plan
+     */
+    private List<Integer> taskIDs = new ArrayList<>();
+
+    /**
+     * Decomposition of the initial task
+     */
+    private List<Method> decomposition = new LinkedList<>();
 
     public HDDLCertificate() {
         super();
@@ -17,8 +27,16 @@ public class HDDLCertificate extends SequentialPlan {
         super(plan);
     }
 
-    public List<Integer> getOperatorIDs() {
-        return operatorIDs;
+    public List<Integer> getTaskIDs() {
+        return taskIDs;
+    }
+
+    public List<Method> getDecomposition() {
+        return decomposition;
+    }
+
+    public void setDecomposition(List<Method> decomposition) {
+        this.decomposition = decomposition;
     }
 
     public final boolean add(final int time, final Action action, final Integer id) {
@@ -26,7 +44,7 @@ public class HDDLCertificate extends SequentialPlan {
             return false;
         }
         this.actions().add(time, action);
-        this.operatorIDs.add(time, id);
+        this.taskIDs.add(time, id);
         return true;
     }
 }

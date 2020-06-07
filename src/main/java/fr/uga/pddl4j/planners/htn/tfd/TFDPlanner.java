@@ -136,11 +136,11 @@ public final class TFDPlanner extends AbstractPlanner {
             final double searchTime = (end - start) / 1000.0;
             if (proof != null) {
                 // Print plan information
-                System.out.println("==>\n" + pb.toString(proof) + "<==\n");
-                //System.out.println(String.format("Plan total cost      : %4.2f", proof.cost()));
-                //System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
-                //System.out.println(String.format("Searching time       : %4.3fs", searchTime));
-                //System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
+                System.out.println(pb.toString(proof));
+                System.out.println(String.format("\nPlan total cost      : %4.2f", proof.cost()));
+                System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
+                System.out.println(String.format("Searching time       : %4.3fs", searchTime));
+                System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
 
             } else {
                 System.out.println(String.format(String.format("%nno plan found%n%n")));
@@ -280,6 +280,7 @@ public final class TFDPlanner extends AbstractPlanner {
                             final TFDNode childNode = new TFDNode(currentNode);
                             childNode.setParent(currentNode);
                             childNode.setOperator(operator);
+                            childNode.setTaskdone(task);
                             childNode.getState().apply(action.getCondEffects());
                             open.add(childNode);
                             if (debug) {
@@ -314,6 +315,7 @@ public final class TFDPlanner extends AbstractPlanner {
                             final TFDNode childNode = new TFDNode(currentNode);
                             childNode.setParent(currentNode);
                             childNode.setOperator(problem.getActions().size() + operator);
+                            childNode.setTaskdone(task);
                             childNode.pushAllTasks(method.getSubTasks());
                             open.add(childNode);
                             if (debug) {
@@ -352,14 +354,23 @@ public final class TFDPlanner extends AbstractPlanner {
      * @return the solution plan or null is no solution was found.
      */
     private HDDLCertificate extractPlan(final TFDNode node, final Problem problem) {
-        TFDNode n = node;
+
         final HDDLCertificate proof = new HDDLCertificate();
+        final int s = problem.getActions().size();
+
+        TFDNode n = node;
 
         while (n.getParent() != null) {
-            Integer id = n.getOperator();
-            if (id < problem.getActions().size()) {
-                final Action a = problem.getActions().get(id);
-                proof.add(0, a, id);
+            int operator = n.getOperator();
+            int size = problem.getActions().size();
+            int task = n.getTaskdone();
+            if (operator < size) {
+                final Action a = problem.getActions().get(operator);
+                proof.add(0, a, task);
+            }
+            if (!problem.getTasks().get(task).isPrimtive()) {
+                final Method method = problem.getMethods().get(operator - size);
+                if (!method.getSubTasks().isEmpty()) proof.getDecomposition().add(method);
             }
             n = n.getParent();
         }

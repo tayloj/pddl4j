@@ -747,13 +747,13 @@ public class Problem implements Serializable {
      */
     public String toString(final Task task) {
         final StringBuffer str = new StringBuffer();
-        str.append("(");
+        //str.append("(");
         str.append(this.taskSymbols.get(task.getSymbol()));
         for (Integer arg : task.getArguments()) {
             str.append(" ");
             str.append(this.constantSymbols.get(arg));
         }
-        str.append(")");
+        //str.append(")");
         return str.toString();
     }
 
@@ -787,10 +787,32 @@ public class Problem implements Serializable {
     public final String toString(final HDDLCertificate proof) {
 
         final StringBuilder str = new StringBuilder();
-        for (int i = 0; i < proof.getOperatorIDs().size(); i++) {
-            str.append(String.format("%d %s%n", proof.getOperatorIDs().get(i),
+        str.append("==>\n");
+        // Sequential plan
+        for (int i = 0; i < proof.getTaskIDs().size(); i++) {
+            str.append(String.format("%d %s%n", proof.getTaskIDs().get(i),
                 this.toShortString(proof.actions().get(i))));
         }
+        // Initial tasks
+        str.append("root");
+        List<Integer> initTasks = this.getInitialTaskNetwork().getTasks();
+        for (Integer i : initTasks) {
+            str.append(" ");
+            str.append(i);
+        }
+        str.append("\n");
+        // Decomposition
+        for (Method method : proof.getDecomposition()) {
+            int task = method.getTask();
+            str.append(String.format("%d %s -> %s", task, this.toString(this.getTasks().get(task)), method.getName()));
+            List<Integer> subtasks = method.getSubTasks();
+            for (Integer i : subtasks) {
+                str.append(" ");
+                str.append(i);
+            }
+            str.append("\n");
+        }
+        str.append("<==");
         return str.toString();
     }
 
