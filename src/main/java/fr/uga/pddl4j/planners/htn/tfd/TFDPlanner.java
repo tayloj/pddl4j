@@ -17,8 +17,6 @@ package fr.uga.pddl4j.planners.htn.tfd;
 
 import fr.uga.pddl4j.parser.ErrorManager;
 import fr.uga.pddl4j.plan.HDDLCertificate;
-import fr.uga.pddl4j.plan.Plan;
-import fr.uga.pddl4j.plan.SequentialPlan;
 import fr.uga.pddl4j.planners.AbstractPlanner;
 import fr.uga.pddl4j.planners.Planner;
 import fr.uga.pddl4j.planners.ProblemFactory;
@@ -29,7 +27,9 @@ import fr.uga.pddl4j.problem.State;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Properties;
 
 /**
  * This class implements a node for the TFDPlanner planner of the PDDL4J library.
@@ -53,6 +53,161 @@ public final class TFDPlanner extends AbstractPlanner {
     public TFDPlanner(final Properties arguments) {
         super();
         this.arguments = arguments;
+    }
+
+    /**
+     * The main method of the <code>TFDPlanner</code> example. The command line syntax is as
+     * follow:
+     *
+     * <pre>
+     * usage of TFDPlanner:
+     *
+     * OPTIONS   DESCRIPTIONS
+     *
+     * -d <i>str</i>   operator file name
+     * -p <i>str</i>   fact file name
+     * -t <i>num</i>   specifies the maximum CPU-time in seconds (preset: 300)
+     * -h              print this message
+     *
+     * </pre>
+     *
+     * <p>
+     * Commande line example:
+     * <code>java -cp build/libs/pddl4j-x.x.x.jar fr.uga.pddl4j.planners.htn.tfd.TFDPlanner</code><br>
+     * <code>  -d src/test/resources/benchmarks/rover_total_ordered/domain.hddl</code><br>
+     * <code>  -p src/test/resources/benchmarks/rover_total_ordered/pb01.hddl</code><br>
+     * </p>
+     * @param args the arguments of the command line.
+     */
+    public static void main(final String[] args) {
+
+        // Parse the commande line and initialize the arguments of the planner.
+        final Properties arguments = TFDPlanner.parseCommandLine(args);
+        if (arguments == null) {
+            TFDPlanner.printUsage();
+            System.exit(0);
+        }
+
+        // Create an instance of the TFDPlanner Planner
+        final TFDPlanner planner = new TFDPlanner(arguments);
+
+        // Create an instance of the problem factory to parse and encode the domain and problem file
+        final ProblemFactory factory = ProblemFactory.getInstance();
+
+        // Get the domain file and problem file and parse the hddl files.
+        File domain = (File) arguments.get(Planner.DOMAIN);
+        File problem = (File) arguments.get(Planner.PROBLEM);
+        ErrorManager errorManager = null;
+        try {
+            errorManager = factory.parse(domain, problem);
+        } catch (IOException e) {
+            System.out.println("\nunexpected error when parsing the PDDL planning problem description.");
+            System.exit(0);
+        }
+
+        // Print the syntax errors if detected
+        if (!errorManager.isEmpty()) {
+            errorManager.printAll();
+            System.exit(0);
+        }
+
+        System.out.println("\nParsing domain (" + domain.getName()
+            + ") and problem (" + problem.getName() + ") done successfully");
+
+        // Encode the problem into compact representation
+        final int traceLevel = (Integer) arguments.get(Planner.TRACE_LEVEL);
+        factory.setTraceLevel(0);
+        long start = System.currentTimeMillis();
+        final Problem pb = factory.encode();
+        long end = System.currentTimeMillis();
+        final double encodingTime = (end - start) / 1000.0;
+        System.out.println("\nEncoding problem done successfully ("
+                + pb.getActions().size() + " actions, "
+                + pb.getMethods().size() + " methods, "
+                + pb.getRelevantFluents().size() + " fluents, "
+                + pb.getTasks().size() + " tasks)\n");
+
+        try {
+            System.out.println("Searching a solution plan....\n");
+            start = System.currentTimeMillis();
+
+            final HDDLCertificate proof = planner.search(pb);
+            end = System.currentTimeMillis();
+            final double searchTime = (end - start) / 1000.0;
+            if (proof != null) {
+                // Print plan information
+                System.out.println("==>\n" + pb.toString(proof) + "<==\n");
+                //System.out.println(String.format("Plan total cost      : %4.2f", proof.cost()));
+                //System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
+                //System.out.println(String.format("Searching time       : %4.3fs", searchTime));
+                //System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
+
+            } else {
+                System.out.println(String.format(String.format("%nno plan found%n%n")));
+                System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
+                System.out.println(String.format("Searching time       : %4.3fs", searchTime));
+                System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
+            }
+        } catch (OutOfMemoryError err) {
+            System.out.println("Out of memory !");
+            System.exit(0);
+        }
+    }
+
+    /**
+     * Print the usage of the TFDPlanner planner.
+     */
+    private static void printUsage() {
+        final StringBuilder strb = new StringBuilder();
+        strb.append("\nusage of TFDPlanner:\n")
+                .append("OPTIONS   DESCRIPTIONS\n")
+                .append("-d <str>    hddl domain file name\n")
+                .append("-p <str>    hddl problem file name\n")
+                .append("-l <num>    trace level\n")
+                .append("-t <num>    specifies the maximum CPU-time in seconds (preset: 300)\n")
+                .append("-h          print this message\n\n");
+        Planner.getLogger().trace(strb.toString());
+    }
+
+    /**
+     * Parse the command line and return the planner's arguments.
+     *
+     * @param args the command line.
+     * @return the planner arguments or null if an invalid argument is encountered.
+     */
+    private static Properties parseCommandLine(String[] args) {
+
+        // Get the default arguments from the super class
+        final Properties arguments = Planner.getDefaultArguments();
+
+        // Parse the command line and update the default argument value
+        for (int i = 0; i < args.length; i += 2) {
+            if ("-d".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
+                if (!new File(args[i + 1]).exists()) {
+                    return null;
+                }
+                arguments.put(Planner.DOMAIN, new File(args[i + 1]));
+            } else if ("-p".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
+                if (!new File(args[i + 1]).exists()) {
+                    return null;
+                }
+                arguments.put(Planner.PROBLEM, new File(args[i + 1]));
+            } else if ("-t".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
+                final int timeout = Integer.parseInt(args[i + 1]) * 1000;
+                if (timeout < 0) {
+                    return null;
+                }
+                arguments.put(Planner.TIMEOUT, timeout);
+            } else if ("-l".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
+                final int level = Integer.parseInt(args[i + 1]);
+                arguments.put(Planner.TRACE_LEVEL, level);
+            } else {
+                return null;
+            }
+        }
+        // Return null if the domain or the problem was not specified
+        return (arguments.get(Planner.DOMAIN) == null
+                || arguments.get(Planner.PROBLEM) == null) ? null : arguments;
     }
 
     /**
@@ -209,160 +364,5 @@ public final class TFDPlanner extends AbstractPlanner {
             n = n.getParent();
         }
         return proof;
-    }
-
-    /**
-     * The main method of the <code>TFDPlanner</code> example. The command line syntax is as
-     * follow:
-     *
-     * <pre>
-     * usage of TFDPlanner:
-     *
-     * OPTIONS   DESCRIPTIONS
-     *
-     * -d <i>str</i>   operator file name
-     * -p <i>str</i>   fact file name
-     * -t <i>num</i>   specifies the maximum CPU-time in seconds (preset: 300)
-     * -h              print this message
-     *
-     * </pre>
-     *
-     * <p>
-     * Commande line example:
-     * <code>java -cp build/libs/pddl4j-x.x.x.jar fr.uga.pddl4j.planners.htn.tfd.TFDPlanner</code><br>
-     * <code>  -d src/test/resources/benchmarks/rover_total_ordered/domain.hddl</code><br>
-     * <code>  -p src/test/resources/benchmarks/rover_total_ordered/pb01.hddl</code><br>
-     * </p>
-     * @param args the arguments of the command line.
-     */
-    public static void main(final String[] args) {
-
-        // Parse the commande line and initialize the arguments of the planner.
-        final Properties arguments = TFDPlanner.parseCommandLine(args);
-        if (arguments == null) {
-            TFDPlanner.printUsage();
-            System.exit(0);
-        }
-
-        // Create an instance of the TFDPlanner Planner
-        final TFDPlanner planner = new TFDPlanner(arguments);
-
-        // Create an instance of the problem factory to parse and encode the domain and problem file
-        final ProblemFactory factory = ProblemFactory.getInstance();
-
-        // Get the domain file and problem file and parse the hddl files.
-        File domain = (File) arguments.get(Planner.DOMAIN);
-        File problem = (File) arguments.get(Planner.PROBLEM);
-        ErrorManager errorManager = null;
-        try {
-            errorManager = factory.parse(domain, problem);
-        } catch (IOException e) {
-            System.out.println("\nunexpected error when parsing the PDDL planning problem description.");
-            System.exit(0);
-        }
-
-        // Print the syntax errors if detected
-        if (!errorManager.isEmpty()) {
-            errorManager.printAll();
-            System.exit(0);
-        }
-
-        System.out.println("\nParsing domain (" + domain.getName()
-            + ") and problem (" + problem.getName() + ") done successfully");
-
-        // Encode the problem into compact representation
-        final int traceLevel = (Integer) arguments.get(Planner.TRACE_LEVEL);
-        factory.setTraceLevel(0);
-        long start = System.currentTimeMillis();
-        final Problem pb = factory.encode();
-        long end = System.currentTimeMillis();
-        final double encodingTime = (end - start) / 1000.0;
-        System.out.println("\nEncoding problem done successfully ("
-                + pb.getActions().size() + " actions, "
-                + pb.getMethods().size() + " methods, "
-                + pb.getRelevantFluents().size() + " fluents, "
-                + pb.getTasks().size() + " tasks)\n");
-
-        try {
-            System.out.println("Searching a solution plan....\n");
-            start = System.currentTimeMillis();
-
-            final HDDLCertificate proof = planner.search(pb);
-            end = System.currentTimeMillis();
-            final double searchTime = (end - start) / 1000.0;
-            if (proof != null) {
-                // Print plan information
-                System.out.println("==>\n" + pb.toString(proof) + "<==\n");
-                //System.out.println(String.format("Plan total cost      : %4.2f", proof.cost()));
-                //System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
-                //System.out.println(String.format("Searching time       : %4.3fs", searchTime));
-                //System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
-
-            } else {
-                System.out.println(String.format(String.format("%nno plan found%n%n")));
-                System.out.println(String.format("Encoding time        : %4.3fs", encodingTime));
-                System.out.println(String.format("Searching time       : %4.3fs", searchTime));
-                System.out.println(String.format("Total time           : %4.3fs%n", searchTime + encodingTime));
-            }
-        } catch (OutOfMemoryError err) {
-            System.out.println("Out of memory !");
-            System.exit(0);
-        }
-    }
-
-    /**
-     * Print the usage of the TFDPlanner planner.
-     */
-    private static void printUsage() {
-        final StringBuilder strb = new StringBuilder();
-        strb.append("\nusage of TFDPlanner:\n")
-                .append("OPTIONS   DESCRIPTIONS\n")
-                .append("-d <str>    hddl domain file name\n")
-                .append("-p <str>    hddl problem file name\n")
-                .append("-l <num>    trace level\n")
-                .append("-t <num>    specifies the maximum CPU-time in seconds (preset: 300)\n")
-                .append("-h          print this message\n\n");
-        Planner.getLogger().trace(strb.toString());
-    }
-
-    /**
-     * Parse the command line and return the planner's arguments.
-     *
-     * @param args the command line.
-     * @return the planner arguments or null if an invalid argument is encountered.
-     */
-    private static Properties parseCommandLine(String[] args) {
-
-        // Get the default arguments from the super class
-        final Properties arguments = Planner.getDefaultArguments();
-
-        // Parse the command line and update the default argument value
-        for (int i = 0; i < args.length; i += 2) {
-            if ("-d".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
-                if (!new File(args[i + 1]).exists()) {
-                    return null;
-                }
-                arguments.put(Planner.DOMAIN, new File(args[i + 1]));
-            } else if ("-p".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
-                if (!new File(args[i + 1]).exists()) {
-                    return null;
-                }
-                arguments.put(Planner.PROBLEM, new File(args[i + 1]));
-            } else if ("-t".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
-                final int timeout = Integer.parseInt(args[i + 1]) * 1000;
-                if (timeout < 0) {
-                    return null;
-                }
-                arguments.put(Planner.TIMEOUT, timeout);
-            } else if ("-l".equalsIgnoreCase(args[i]) && ((i + 1) < args.length)) {
-                final int level = Integer.parseInt(args[i + 1]);
-                arguments.put(Planner.TRACE_LEVEL, level);
-            } else {
-                return null;
-            }
-        }
-        // Return null if the domain or the problem was not specified
-        return (arguments.get(Planner.DOMAIN) == null
-                || arguments.get(Planner.PROBLEM) == null) ? null : arguments;
     }
 }
