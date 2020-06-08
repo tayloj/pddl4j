@@ -367,10 +367,9 @@ public final class TFDPlanner extends AbstractPlanner {
             if (operator < size) {
                 final Action a = problem.getActions().get(operator);
                 proof.add(0, a, task);
-            }
-            if (!problem.getTasks().get(task).isPrimtive()) {
+            } else {
                 final Method method = problem.getMethods().get(operator - size);
-                if (!method.getSubTasks().isEmpty()) proof.getDecomposition().add(method);
+                proof.getDecomposition().add(method);
             }
             n = n.getParent();
         }
