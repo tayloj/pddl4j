@@ -356,13 +356,12 @@ public final class TFDPlanner extends AbstractPlanner {
     private HDDLCertificate extractPlan(final TFDNode node, final Problem problem) {
 
         final HDDLCertificate proof = new HDDLCertificate();
-        final int s = problem.getActions().size();
+        final int size = problem.getActions().size();
 
         TFDNode n = node;
 
         while (n.getParent() != null) {
             int operator = n.getOperator();
-            int size = problem.getActions().size();
             int task = n.getTaskdone();
             if (operator < size) {
                 final Action a = problem.getActions().get(operator);
