@@ -268,7 +268,8 @@ TOKEN : {
 |	< HTN : ":htn" > // ADD HDDL
 |	< PARTIAL_ORDERED_HTN : ":partial-ordered-htn" > // ADD HDDL
 |	< TOTAL_ORDERED_HTN : ":total-ordered-htn" > // ADD HDDL
-|   < HTN_METHOD_PRECONDITIONS : ":htn-method-preconditions" > // ADD HDDL not conform to HDDL (:htn-method-prec)
+//|   < HTN_METHOD_PRECONDITIONS : ":htn-method-preconditions" > // ADD HDDL not conform to HDDL (:htn-method-prec)
+|   < HTN_METHOD_PRECONDITIONS : ":htn-method-prec" > // To be conform for IPC
 |   < ORDERED_SUBTASKS : ":ordered-subtasks" > // ADD HDDL
 |   < ORDERED_TASKS : ":ordered-tasks" > // ADD HDDL
 |   < TASKS : ":tasks" >
@@ -673,12 +674,17 @@ Set<PDDLRequireKey> require_key() :
 	|	<DURATION_INEQUALITIES> {
 			requirements.add(PDDLRequireKey.DURATION_INEQUALITIES);
 		}
-	|	<PARTIAL_ORDERED_HTN> { // ADD HDDL
-    		requirements.add(PDDLRequireKey.PARTIAL_ORDERED_HTN);
+    |	<HTN> { // ADD HDDL to be conform for IPC
+        	requirements.add(PDDLRequireKey.TOTAL_ORDERED_HTN);
+        	requirements.add(PDDLRequireKey.HTN);
+        	//requirements.add(PDDLRequireKey.PARTIAL_ORDERED_HTN);
         }
-    |	<TOTAL_ORDERED_HTN> { // ADD HDDL
-            requirements.add(PDDLRequireKey.TOTAL_ORDERED_HTN);
-        }
+//	|	<PARTIAL_ORDERED_HTN> { // ADD HDDL
+//    		requirements.add(PDDLRequireKey.PARTIAL_ORDERED_HTN);
+//        }
+//    |	<TOTAL_ORDERED_HTN> { // ADD HDDL
+//            requirements.add(PDDLRequireKey.TOTAL_ORDERED_HTN);
+//        }
     |   <HTN_METHOD_PRECONDITIONS> { // ADD HDDL
             requirements.add(PDDLRequireKey.HTN_METHOD_PRECONDITIONS);
     }
@@ -867,7 +873,8 @@ void predicates_def() :
 }
 
 
-void tasks_def() :
+// Remove to be confome with the awful and verbose IPC syntax
+/*void tasks_def() :
 {
 	PDDLNamedTypedList taskID = null;
 }
@@ -881,7 +888,7 @@ void tasks_def() :
 	} catch(Throwable e) {
 		this.error(e, token.beginLine, token.beginColumn);
 	}
-}
+}*/
 
 
 PDDLNamedTypedList atomic_task_skeleton() : // ADD HDDL
@@ -902,7 +909,8 @@ PDDLNamedTypedList atomic_task_skeleton() : // ADD HDDL
 	}
 }
 
-/*PDDLNamedTypedList comp_task_def() : // ADD HDDL
+// Next two rules add for the IPC
+PDDLNamedTypedList comp_task_def() : // ADD HDDL
 {
     PDDLNamedTypedList taskID;
 }
@@ -910,6 +918,20 @@ PDDLNamedTypedList atomic_task_skeleton() : // ADD HDDL
     left_bracket() <TASK> taskID=task_def() right_bracket() {
         return taskID;
     }
+}
+
+void tasks_def() :
+{
+	PDDLNamedTypedList task = null;
+}
+{
+	try {
+			(LOOKAHEAD(2) task=task_def() {
+				this.domain.addTask(task);
+			})+
+	} catch(Throwable e) {
+		this.error(e, token.beginLine, token.beginColumn);
+	}
 }
 
 PDDLNamedTypedList task_def() : // ADD HDDL
@@ -929,7 +951,7 @@ PDDLNamedTypedList task_def() : // ADD HDDL
         }
         return l;
     }
-}*/
+}
 
 PDDLSymbol task_symbol() : // ADD HDDL
  {
@@ -1871,10 +1893,10 @@ void structure_def() :
 			dp = derived_def() {
 				this.domain.addDerivedPredicate(dp);
 			}
-//	|   LOOKAHEAD (2, {this.isRequirement(PDDLRequireKey.HTN)}) // ADD HDDL
-//            taskID = comp_task_def() {
-//                this.domain.addTask(taskID);
-//            }
+	|   LOOKAHEAD (2, {this.isRequirement(PDDLRequireKey.HTN)}) // ADD to be conform to IPC HDDL
+            taskID = comp_task_def() {
+                this.domain.addTask(taskID);
+            }
     |   LOOKAHEAD (2, {this.isRequirement(PDDLRequireKey.TOTAL_ORDERED_HTN)
                 || this.isRequirement(PDDLRequireKey.PARTIAL_ORDERED_HTN)
             }) // ADD HDDL
@@ -1929,11 +1951,13 @@ PDDLTaskNetwork total_ordered_task_network() : // ADD HDDL
 {
     PDDLExpression tasks = null;
     PDDLExpression logical = new PDDLExpression(PDDLConnective.AND);
+    PDDLExpression ordering = new PDDLExpression(PDDLConnective.AND); // Add to be IPC compliant NO sens because tasknetwork totally ordered
 }
 {
 
-//    (<ORDERED_SUBTASKS> | <ORDERED_TASKS>) tasks = subtask_def() // remove to simplify
-    <ORDERED_SUBTASKS> tasks = subtask_def()
+    (<ORDERED_SUBTASKS> | <ORDERED_TASKS> | <SUBTASKS> | <TASK>) tasks = subtask_def() // Add to be IPC compliant
+//    <ORDERED_SUBTASKS> tasks = subtask_def()
+    [<ORDERING> ordering = ordering_constraint_def()] // Add to be IPC compliant NO sens because tasknetwork totally ordered
 	[<CONSTRAINTS> logical = logical_constraint_def()]
     {
 	    return new PDDLTaskNetwork(tasks, new PDDLExpression(PDDLConnective.AND), logical, true);
@@ -3477,7 +3501,7 @@ void htn_problem() : // ADD HDDL
 		[LOOKAHEAD(2) require_def(Lexer.PARSER_PROBLEM)]
 		[LOOKAHEAD(2) object_declaration()]
         left_bracket() <HTN>
-//            [<PARAMETERS> typed_list(Lexer.VARIABLE)] // Is in HDDL definition but has no sens
+            [<PARAMETERS> typed_list(Lexer.VARIABLE)] // Is in HDDL definition but has no sens never use.
             taskNetwork = task_network() {
                 this.problem.setInitialTaskNetwork(taskNetwork);
             }
