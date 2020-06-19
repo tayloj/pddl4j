@@ -349,6 +349,7 @@ public final class Encoder implements Serializable {
         accepted.add(PDDLRequireKey.TOTAL_ORDERED_HTN);
         accepted.add(PDDLRequireKey.PARTIAL_ORDERED_HTN);
         accepted.add(PDDLRequireKey.HTN_METHOD_PRECONDITIONS);
+        accepted.add(PDDLRequireKey.HTN); // To be conform with IPC
 
         Encoder.requirements = new LinkedHashSet<>();
         Encoder.requirements.addAll(domain.getRequirements());
