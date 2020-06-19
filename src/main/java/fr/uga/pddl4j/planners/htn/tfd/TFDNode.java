@@ -41,10 +41,11 @@ public class TFDNode implements Serializable, Comparable<TFDNode> {
      */
     private LinkedList<Integer> tasks;
 
+
     /**
-     * Task achieved at this node
+     * The task achieved in this node.
      */
-    private int taskdone;
+    private Integer atask;
 
     /**
      * The operator used to reach this node.
@@ -199,14 +200,13 @@ public class TFDNode implements Serializable, Comparable<TFDNode> {
         this.operator = operator;
     }
 
-    public int getTaskdone() {
-        return taskdone;
+    public Integer getAtask() {
+        return atask;
     }
 
-    public void setTaskdone(int taskdone) {
-        this.taskdone = taskdone;
+    public void setAtask(Integer atask) {
+        this.atask = atask;
     }
-
 
     /**
      * Compares this node with the specified node for order. Returns a negative integer, zero, or a positive integer as

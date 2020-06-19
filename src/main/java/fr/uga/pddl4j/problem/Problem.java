@@ -28,11 +28,8 @@ import fr.uga.pddl4j.plan.Plan;
 import fr.uga.pddl4j.util.BitMatrix;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -785,35 +782,7 @@ public class Problem implements Serializable {
     }
 
     public final String toString(final HDDLCertificate proof) {
-
-        final StringBuilder str = new StringBuilder();
-        str.append("==>\n");
-        // Sequential plan
-        for (int i = 0; i < proof.getTaskIDs().size(); i++) {
-            str.append(String.format("%d %s%n", proof.getTaskIDs().get(i),
-                this.toShortString(proof.actions().get(i))));
-        }
-        // Initial tasks
-        str.append("root");
-        List<Integer> initTasks = this.getInitialTaskNetwork().getTasks();
-        for (Integer i : initTasks) {
-            str.append(" ");
-            str.append(i);
-        }
-        str.append("\n");
-        // Decomposition
-        for (Method method : proof.getDecomposition()) {
-            int task = method.getTask();
-            str.append(String.format("%d %s -> %s", task, this.toString(this.getTasks().get(task)), method.getName()));
-            List<Integer> subtasks = method.getSubTasks();
-            for (Integer i : subtasks) {
-                str.append(" ");
-                str.append(i);
-            }
-            str.append("\n");
-        }
-        str.append("<==");
-        return str.toString();
+        return proof.toString();
     }
 
     /**

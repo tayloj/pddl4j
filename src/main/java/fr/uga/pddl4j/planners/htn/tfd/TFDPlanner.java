@@ -262,7 +262,7 @@ public final class TFDPlanner extends AbstractPlanner {
             } else {
                 // Get and remove the fist task of the task network
                 //System.out.println(currentNode);
-                int task = currentNode.popTask();
+                final int task = currentNode.popTask();
                 // Get the current state of the search
                 final State state = currentNode.getState();
                 // Get the relevant operators, i.e., action or method that are relevant for this task.
@@ -280,8 +280,8 @@ public final class TFDPlanner extends AbstractPlanner {
                             final TFDNode childNode = new TFDNode(currentNode);
                             childNode.setParent(currentNode);
                             childNode.setOperator(operator);
-                            childNode.setTaskdone(task);
                             childNode.getState().apply(action.getCondEffects());
+                            childNode.setAtask(task);
                             open.add(childNode);
                             if (debug) {
                                 System.out.println("=====> Decomposition succeeded push node:");
@@ -315,8 +315,8 @@ public final class TFDPlanner extends AbstractPlanner {
                             final TFDNode childNode = new TFDNode(currentNode);
                             childNode.setParent(currentNode);
                             childNode.setOperator(problem.getActions().size() + operator);
-                            childNode.setTaskdone(task);
                             childNode.pushAllTasks(method.getSubTasks());
+                            childNode.setAtask(task);
                             open.add(childNode);
                             if (debug) {
                                 System.out.println("=====> Decomposition succeeded push node:");
@@ -354,24 +354,7 @@ public final class TFDPlanner extends AbstractPlanner {
      * @return the solution plan or null is no solution was found.
      */
     private HDDLCertificate extractPlan(final TFDNode node, final Problem problem) {
-
-        final HDDLCertificate proof = new HDDLCertificate();
-        final int size = problem.getActions().size();
-
-        TFDNode n = node;
-
-        while (n.getParent() != null) {
-            int operator = n.getOperator();
-            int task = n.getTaskdone();
-            if (operator < size) {
-                final Action a = problem.getActions().get(operator);
-                proof.add(0, a, task);
-            } else {
-                final Method method = problem.getMethods().get(operator - size);
-                proof.getDecomposition().add(method);
-            }
-            n = n.getParent();
-        }
+        final HDDLCertificate proof = new HDDLCertificate(node, problem);
         return proof;
     }
 }
