@@ -1,5 +1,5 @@
 (define (domain rover_domain)
-	(:requirements :typing :htn :htn-method-prec :negative-preconditions)
+	(:requirements :typing :hierarchy :htn-method-prec :negative-preconditions)
 	(:types
 		waypoint - object
 		mode - object
@@ -414,11 +414,11 @@
 			)
 		:effect
 			(and
-				(not (available ?r))
-				(not (channel_free ?l))
-				(channel_free ?l)
+;;				(not (available ?r))
+;;				(not (channel_free ?l))
+;;				(channel_free ?l)
 				(communicated_soil_data ?p)
-				(available ?r)
+;;				(available ?r)
 			)
 	)
 
@@ -435,11 +435,11 @@
 			)
 		:effect
 			(and
-				(not (available ?r))
-				(not (channel_free ?l))
-				(channel_free ?l)
+;;				(not (available ?r))
+;;				(not (channel_free ?l))
+;;				(channel_free ?l)
 				(communicated_rock_data ?p)
-				(available ?r)
+;;				(available ?r)
 			)
 	)
 
@@ -456,11 +456,11 @@
 			)
 		:effect
 			(and
-				(not (available ?r))
-				(not (channel_free ?l))
-				(channel_free ?l)
+;;				(not (available ?r))
+;;				(not (channel_free ?l))
+;;				(channel_free ?l)
 				(communicated_image_data ?o ?m)
-				(available ?r)
+;;				(available ?r)
 			)
 	)
 

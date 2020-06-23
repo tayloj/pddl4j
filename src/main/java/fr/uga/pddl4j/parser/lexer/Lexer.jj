@@ -266,6 +266,7 @@ TOKEN : {
 |	< DURATION_INEQUALITIES : ":duration-inequalities" >
 // Not conform with HDD. HDDL has only HTN requirement
 |	< HTN : ":hierarchy" > // ADD HDDL
+|	< HTN_GOAL : ":htn" > // ADD HDDL
 |	< PARTIAL_ORDERED_HTN : ":partial-ordered-htn" > // ADD HDDL
 |	< TOTAL_ORDERED_HTN : ":total-ordered-htn" > // ADD HDDL
 //|   < HTN_METHOD_PRECONDITIONS : ":htn-method-preconditions" > // ADD HDDL not conform to HDDL (:htn-method-prec)
@@ -3500,7 +3501,7 @@ void htn_problem() : // ADD HDDL
 		right_bracket()
 		[LOOKAHEAD(2) require_def(Lexer.PARSER_PROBLEM)]
 		[LOOKAHEAD(2) object_declaration()]
-        left_bracket() <HTN>
+        left_bracket() <HTN_GOAL>
             [<PARAMETERS> typed_list(Lexer.VARIABLE)] // Is in HDDL definition but has no sens never use.
             taskNetwork = task_network() {
                 this.problem.setInitialTaskNetwork(taskNetwork);
